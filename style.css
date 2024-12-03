@@ -1,0 +1,7 @@
+.question label {
+    display: block; /* Ensures each label takes up the full width */
+    margin: 5px 0; /* Adds spacing between options */
+}
+.hidden {
+    display: none;
+}
