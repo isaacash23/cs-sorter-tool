@@ -28,7 +28,7 @@ async function fillInQuestions() {
         q.options.forEach((option) => {
             const label = document.createElement("label");
             label.innerHTML = `
-                <input type="radio" id="${q.id}" code="${option.option_code}"> ${option.option_text}
+                <input type="radio" name = "${q.id}" code="${option.option_code}"> ${option.option_text}
             `;
             questionDiv.appendChild(label);
         });
@@ -48,7 +48,7 @@ function getSelectedAnswers() {
     const questions = document.querySelectorAll('.question');
 
     questions.forEach((questionDiv) => {
-        const questionId = questionDiv.querySelector('input[type="radio"]').id; // Get the id attribute
+        const questionId = questionDiv.querySelector('input[type="radio"]').name; // Get the name attribute
         const selectedOption = questionDiv.querySelector('input[type="radio"]:checked'); // Get the selected option
         
         if (selectedOption) {
@@ -83,11 +83,20 @@ function showResults(responseData) {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = ''; // Clear previous content
 
-    // Display Local Government Profile
-    resultsDiv.appendChild(createTextSection('Local Government Profile', responseData.local_gov_profile));
+    // Create a container for each row
+    const createRow = () => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.marginBottom = '20px'; // Add spacing between rows
+        return row;
+    };
 
-    // Display Community Profile
-    resultsDiv.appendChild(createTextSection('Community Profile', responseData.community_profile));
+    // Add Local Government and Community profiles
+    const profileRow = createRow();
+    profileRow.appendChild(createProfileDisplay('Local Government Profile:', responseData.local_gov_profile));
+    profileRow.appendChild(createProfileDisplay('Community Profile:', responseData.community_profile));
+    resultsDiv.appendChild(profileRow);
 
     // Separate data into Local Government and Community categories
     const localGovCapacity = filterByCategory(responseData.capacity_scores, 'Local Government');
@@ -95,14 +104,20 @@ function showResults(responseData) {
     const localGovEC = filterByCategory(responseData.ec_scores, 'Local Government');
     const communityEC = filterByCategory(responseData.ec_scores, 'Community');
 
-    // Display Capacity Scores
-    resultsDiv.appendChild(createSection('Capacity Scores - Local Government', localGovCapacity));
-    resultsDiv.appendChild(createSection('Capacity Scores - Community', communityCapacity));
+    // Add Capacity Scores
+    const capacityRow = createRow();
+    capacityRow.appendChild(createSection('Capacity Scores - Local Government', localGovCapacity));
+    capacityRow.appendChild(createSection('Capacity Scores - Community', communityCapacity));
+    resultsDiv.appendChild(capacityRow);
 
-    // Display EC Scores
-    resultsDiv.appendChild(createSection('EC Scores - Local Government', localGovEC));
-    resultsDiv.appendChild(createSection('EC Scores - Community', communityEC));
+    // Add EC Scores
+    const ecRow = createRow();
+    ecRow.appendChild(createSection('EC Scores - Local Government', localGovEC));
+    ecRow.appendChild(createSection('EC Scores - Community', communityEC));
+    resultsDiv.appendChild(ecRow);
 }
+
+
 
 // Helper function to filter data by category
 function filterByCategory(data, category) {
@@ -155,14 +170,15 @@ function createSection(title, data) {
 }
 
 // Helper function to create a text section
-function createTextSection(title, text) {
+function createProfileDisplay(title, text) {
     const sectionDiv = document.createElement('div');
     sectionDiv.className = 'section';
     const heading = document.createElement('h3');
     heading.textContent = title;
     sectionDiv.appendChild(heading);
-    const paragraph = document.createElement('p');
+    const paragraph = document.createElement('h1');
     paragraph.textContent = text;
+    paragraph.style.color = "#1b263b";
     sectionDiv.appendChild(paragraph);
     return sectionDiv;
 }
