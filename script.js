@@ -66,6 +66,8 @@ async function submitAnswers() {
     selectedAnswers = getSelectedAnswers()
     postArguments = {'selected_answers': selectedAnswers}
 
+    console.log(postArguments)
+
     const response = await fetch(SORTER_API_URL, {
         // redirect: "follow",
         method: "POST",
@@ -125,7 +127,7 @@ function filterByCategory(data, category) {
     for (const [key, value] of Object.entries(data)) {
         if (key.includes(category)) {
             // Simplify the key by removing the category suffix
-            const simplifiedKey = key.replace(`-${category}`, '');
+            const simplifiedKey = key.replace(`#${category}`, '');
             filtered[simplifiedKey] = value;
         }
     }
