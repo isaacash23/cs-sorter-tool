@@ -38,7 +38,7 @@ async function fillInQuestions() {
         q.options.forEach((option) => {
             const label = document.createElement("label");
             label.innerHTML = `
-                <input type="${type}" name = "${q.id}" code="${option.option_code}"> ${option.option_text}
+                <input type="${type}" name = "${q.id}" value="${option.option_code}"> ${option.option_text}
             `;
             questionDiv.appendChild(label);
         });
@@ -63,7 +63,7 @@ function getSelectedAnswers() {
         const questionId = questionDiv.querySelector('input[type="radio"], input[type="checkbox"]').name; // Get the name attribute
         const selectedInputs = questionDiv.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked'); // Get selected inputs (radio or checkbox)
         
-        const selectedOptions = Array.from(selectedInputs).map(input => input.getAttribute('code')); // Collect codes of selected inputs
+        const selectedOptions = Array.from(selectedInputs).map(input => input.value); // Collect codes of selected inputs
         
         // Save the selected options or null if none selected
         selectedAnswers[questionId] = selectedOptions.length > 0 ? selectedOptions : null;
@@ -94,6 +94,7 @@ async function submitAnswers() {
 /// Display the results
 
 function showResults(responseData) {
+    console.log(responseData)
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = ''; // Clear previous content
 
@@ -102,15 +103,20 @@ function showResults(responseData) {
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.justifyContent = 'space-between';
-        row.style.marginBottom = '20px'; // Add spacing between rows
         return row;
     };
 
     // Add Local Government and Community profiles
     const profileRow = createRow();
-    profileRow.appendChild(createProfileDisplay('Local Government Profile:', responseData.local_gov_profile.profile));
-    profileRow.appendChild(createProfileDisplay('Community Profile:', responseData.community_profile.profile));
+    profileRow.appendChild(createProfileColumn('Local Government Profile:', responseData.local_gov_profile));
+    profileRow.appendChild(createProfileColumn('Community Profile:', responseData.community_profile));
     resultsDiv.appendChild(profileRow);
+
+    // Add header row for ECs
+    const ecHeaderRow = createRow();
+    createAndAppendElement(ecHeaderRow,'h3',"Local Government Enabling Conditions:","ecColumnHeader")
+    createAndAppendElement(ecHeaderRow,'h3',"Community Enabling Conditions:","ecColumnHeader")
+    resultsDiv.appendChild(ecHeaderRow);
 
     // Add EC Scores
     const ecRow = createRow();
@@ -119,6 +125,19 @@ function showResults(responseData) {
     resultsDiv.appendChild(ecRow);
 }
 
+//// Builds the  profile info
+function createProfileColumn(title, info) {
+    const sectionDiv = document.createElement('div');
+
+    createAndAppendElement(sectionDiv,'h3',title,"profileIntro")
+    createAndAppendElement(sectionDiv,'h1',info.profile,"profileName")
+    createAndAppendElement(sectionDiv,'p',"Profile explanation:",'paragraphHeader')
+    createAndAppendElement(sectionDiv,'p',info.text.description)
+
+    return sectionDiv;
+}
+
+//// Builds the enabling conditions info
 function createECColumn(ecListObject) {
     const ecListDiv = document.createElement('div');
     for (let ec in ecListObject) {
@@ -128,16 +147,10 @@ function createECColumn(ecListObject) {
 }
 
 function createECBlock(name, info) {
-    console.log(info)
     const ecDiv = document.createElement('div');
-
-    const ecTitle = document.createElement('h2');
-    ecTitle.textContent = name;
-    ecDiv.appendChild(ecTitle)
-
-    const level = document.createElement('p');
-    level.textContent = `Level: ${info.level ?? "N/A"}`
-    ecDiv.appendChild(level)
+    
+    createAndAppendElement(ecDiv,'h2',name,"ecName")
+    showECLevel(info.level,ecDiv)
 
     // If the EC could not be found (no text attached), return the error message and stop
     if (info.text == null) {
@@ -147,41 +160,39 @@ function createECBlock(name, info) {
         return ecDiv
     }
 
-    const descriptionTitle = document.createElement('p')
-    descriptionTitle.className = "paragraphHeader"
-    descriptionTitle.textContent = "Description:"
-    ecDiv.appendChild(descriptionTitle)
-
-    const description = document.createElement('p')
-    description.className = "ecExplanation"
-    description.textContent = info.text.description
-    ecDiv.appendChild(description)
-
-    const supportsTitle = document.createElement('p')
-    supportsTitle.className = "paragraphHeader"
-    supportsTitle.textContent = "What this means:"
-    ecDiv.appendChild(supportsTitle)
-
-    const supports = document.createElement('p')
-    supports.className = "paragraphHeader"
-    supports.textContent = info.text.supports
-    ecDiv.appendChild(supports)
-
+    createAndAppendElement(ecDiv, 'p', 'Description:', 'paragraphHeader');
+    createAndAppendElement(ecDiv, 'p', info.text.description, 'ecExplanation');
+    createAndAppendElement(ecDiv, 'p', 'What this means:', 'paragraphHeader');
+    createAndAppendElement(ecDiv, 'p', info.text.supports, 'ecExplanation');
+    
+    ecDiv.className = "ecBlock"
     return ecDiv
 }
 
-// Helper function to create a text section
-function createProfileDisplay(title, text) {
-    const sectionDiv = document.createElement('div');
-    sectionDiv.className = 'section';
-    const heading = document.createElement('h3');
-    heading.textContent = title;
-    sectionDiv.appendChild(heading);
-    const paragraph = document.createElement('h1');
-    paragraph.textContent = text;
-    paragraph.style.color = "#1b263b";
-    sectionDiv.appendChild(paragraph);
-    return sectionDiv;
+function showECLevel(level,parent) {
+    if (level == null) {
+        createAndAppendElement(parent,'p', `Level: "N/A"}`,"ecLevel")
+    } else {
+        let levelIntro = document.createTextNode("Level: ")
+        let coloredScoreText = document.createElement('span')
+        coloredScoreText.textContent = level
+        coloredScoreText.className = `score${level}`
+        let showScore = document.createElement('p')
+        showScore.appendChild(levelIntro)
+        showScore.appendChild(coloredScoreText)
+        showScore.className = "ecLevel"
+        parent.appendChild(showScore)
+    }
+}
+
+// Helper function to create a block of text
+function createAndAppendElement(parent, tag, textContent, className = '') {
+    const element = document.createElement(tag);
+    if (className) {
+        element.className = className;
+    }
+    element.textContent = textContent;
+    parent.appendChild(element);
 }
 
 ////// User Interaction ////////
@@ -206,4 +217,32 @@ document.getElementById("back").addEventListener("click", () => {
     document.getElementById("survey").classList.remove("hidden");
     document.getElementById("submit").classList.remove("hidden");
 
+});
+
+
+//////// Testing /////////
+///// Fills in all questions through a keyboard shortcut. Comment these out after Beta testing.
+
+// Auto-fill in all responses
+function selectAllRadios(value) {
+    // Get all radio buttons on the page
+    const radios = document.querySelectorAll('input[type="radio"]');
+    
+    // Loop through the radios and select the ones matching the specified value
+    radios.forEach(radio => {
+        if (radio.value === value) {
+            radio.checked = true;
+        }
+    });
+}
+
+document.addEventListener("keydown", (event) => {
+    // Check if the desired key combination is pressed
+    if (event.ctrlKey && event.shiftKey && (event.metaKey || event.altKey) && event.code === "KeyS") {
+        // Prevent default behavior if needed
+        event.preventDefault();
+
+        // Call the function to select all radios
+        selectAllRadios("5"); // Replace "option1" with the desired value
+    }
 });

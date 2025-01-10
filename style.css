@@ -19,21 +19,11 @@ body {
     margin-left: 2%;
 }
 
-#results div {
-    padding: 10px;
-    width: 100%; 
-}
-
-#results div > div {
-    flex: 1; 
-    margin: 0 10px; 
-}
-
 
 /* Headings */
 h1, h2, h3 {
     color: #1d3557;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
 }
 
 /* Links */
@@ -73,28 +63,46 @@ button:hover {
     margin: 5px 0; /* Adds spacing between options */
 }
 
-/* Table Styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-    font-size: 16px;
-}
-
-table th, table td {
-    border: 1px solid #ddd;
+/* Results */
+#results div {
     padding: 10px;
-    text-align: left;
+    width: 100%; 
 }
 
-table th {
-    background-color: #f4f4f4;
-    font-weight: bold;
+#results div > div {
+    flex: 1; 
+    padding: 10px;
 }
 
-table tr {
-    background-color: #fcfcff;
+.ecBlock {
+    border: 2px solid black;
+    margin-bottom: 30px;
 }
+
+.paragraphHeader {
+    text-decoration: underline;
+    margin-top: 10px;
+}
+
+.profileIntro, .profileName, .ecColumnHeader, .ecName, .ecLevel {
+    text-align: center;
+    flex: 1;
+}
+
+.ecColumnHeader {
+    margin-bottom: 0px;
+    margin-top: 10px;
+    padding: 0px;
+}
+
+.scoreHigh {
+    color: green;
+}
+
+.scoreLow {
+    color: red;
+}
+
 
 /* Smooth Transitions */
 /* * {
