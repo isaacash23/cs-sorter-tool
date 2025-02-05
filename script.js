@@ -24,7 +24,13 @@ async function fetchQuestionData() {
 //Show the questions on the page
 async function fillInQuestions() {
     let questions = await fetchQuestionData()
-    questions.forEach((q) => {
+    // Keet track of which Q IDs have already been created
+    var seenQuestionIDs = new Set()
+    for (const q of questions) {
+        if (seenQuestionIDs.has(q.id)) {
+            continue
+        }
+        seenQuestionIDs.add(q.id)
         const questionDiv = document.createElement("div");
         questionDiv.className = "question";
         questionDiv.innerHTML = `<p>${q.question}</p>`;
@@ -44,7 +50,7 @@ async function fillInQuestions() {
         });
     
         surveyDiv.appendChild(questionDiv);
-    });
+    }
 }
 
 // Load survey
@@ -132,7 +138,13 @@ function createProfileColumn(title, info) {
     createAndAppendElement(sectionDiv,'h3',title,"profileIntro")
     createAndAppendElement(sectionDiv,'h1',info.profile,"profileName")
     createAndAppendElement(sectionDiv,'p',"Profile explanation:",'paragraphHeader')
-    createAndAppendElement(sectionDiv,'p',info.text.description)
+
+    if (info.text == null) {
+        var profileDescription = "Could not find profile"
+    } else {
+        var profileDescription = info.text.description
+    }
+    createAndAppendElement(sectionDiv,'p',profileDescription)
 
     return sectionDiv;
 }
