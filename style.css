@@ -84,7 +84,7 @@ button:hover {
     margin-top: 10px;
 }
 
-.profileIntro, .profileName, .ecColumnHeader, .ecName, .ecLevel {
+.profileIntro, .profileName, .ecColumnHeader, .ecName, .ecLevel, .chart-wrapper {
     text-align: center;
     flex: 1;
 }

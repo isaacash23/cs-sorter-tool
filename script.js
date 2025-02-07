@@ -124,11 +124,25 @@ function showResults(responseData) {
     createAndAppendElement(ecHeaderRow,'h3',"Community Enabling Conditions:","ecColumnHeader")
     resultsDiv.appendChild(ecHeaderRow);
 
+    // Add elements for charts
+    var govECNamesAndScores = []
+    var communityECNamesAndScores = []
+    const chartRow = createRow();
+    var govChart = document.createElement('div');
+    var communityChart = document.createElement('div')
+    chartRow.appendChild(govChart)
+    chartRow.appendChild(communityChart)
+    resultsDiv.appendChild(chartRow);
+
     // Add EC Scores
     const ecRow = createRow();
-    ecRow.appendChild(createECColumn(responseData.ec_scores["Local Government"]));
-    ecRow.appendChild(createECColumn(responseData.ec_scores["Community"]));
+    ecRow.appendChild(createECColumn(responseData.ec_scores["Local Government"],govECNamesAndScores));
+    ecRow.appendChild(createECColumn(responseData.ec_scores["Community"],communityECNamesAndScores));
     resultsDiv.appendChild(ecRow);
+
+    // Fill in charts with EC scores
+    createBarChart(govChart,govECNamesAndScores)
+    createBarChart(communityChart,communityECNamesAndScores)
 }
 
 //// Builds the  profile info
@@ -149,16 +163,63 @@ function createProfileColumn(title, info) {
     return sectionDiv;
 }
 
+/// Makes the bar chart with results
+function createBarChart(wrapperElement,scoreTracker) {
+    wrapperElement.className = "chart-wrapper"
+
+    chartCanvas = document.createElement('canvas')
+    wrapperElement.appendChild(chartCanvas)
+    
+    ecLabels = scoreTracker.map(row => row[0])
+    ecScores = scoreTracker.map(row => row[1])
+    ecDivElements = scoreTracker.map(row => row[2])
+
+    const chart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+            labels: ecLabels,
+            datasets: [{
+                data: ecScores,
+                backgroundColor: ecScores.map(score => getBarColor(score))
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Horizontal bars
+            plugins: {
+                legend: { display: false } // Hide legend
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    ecDivElements[index]?.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+    });
+
+    function getBarColor(score) {
+        // Base color in HSL format (blue: 210° hue)
+        const minLightness = 80; // Lightest color
+        const maxLightness = 30; // Darkest color
+
+        // Map score to lightness value (inverted: higher score = darker)
+        const lightness = minLightness - score * (minLightness - maxLightness);
+
+        return `hsl(210, 100%, ${lightness}%)`; // HSL format keeps saturation constant
+    }
+}
+
 //// Builds the enabling conditions info
-function createECColumn(ecListObject) {
+function createECColumn(ecListObject,scoreTracker) {
     const ecListDiv = document.createElement('div');
     for (let ec in ecListObject) {
-        ecListDiv.append(createECBlock(ec,ecListObject[ec]))
+        info = ecListObject[ec]
+        ecListDiv.append(createECBlock(ec,info,scoreTracker))
     }
     return ecListDiv
 }
 
-function createECBlock(name, info) {
+function createECBlock(name, info, scoreTracker) {
     const ecDiv = document.createElement('div');
     
     createAndAppendElement(ecDiv,'h2',name,"ecName")
@@ -178,6 +239,7 @@ function createECBlock(name, info) {
     createAndAppendElement(ecDiv, 'p', info.text.supports, 'ecExplanation');
     
     ecDiv.className = "ecBlock"
+    scoreTracker.push([name,info.score,ecDiv])
     return ecDiv
 }
 
