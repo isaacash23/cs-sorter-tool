@@ -113,10 +113,10 @@ function showResults(responseData) {
     };
 
     // Add Local Government and Community profiles
-    const profileRow = createRow();
-    profileRow.appendChild(createProfileColumn('Local Government Profile:', responseData.local_gov_profile));
-    profileRow.appendChild(createProfileColumn('Community Profile:', responseData.community_profile));
-    resultsDiv.appendChild(profileRow);
+    // const profileRow = createRow();
+    // profileRow.appendChild(createProfileColumn('Local Government Profile:', responseData.local_gov_profile));
+    // profileRow.appendChild(createProfileColumn('Community Profile:', responseData.community_profile));
+    // resultsDiv.appendChild(profileRow);
 
     // Add header row for ECs
     const ecHeaderRow = createRow();
@@ -311,12 +311,41 @@ function selectAllRadios(value) {
 }
 
 document.addEventListener("keydown", (event) => {
-    // Check if the desired key combination is pressed
-    if (event.ctrlKey && event.shiftKey && (event.metaKey || event.altKey) && event.code === "KeyS") {
+    
+    if (event.shiftKey && (event.ctrlKey || event.metaKey || event.altKey)) {
         // Prevent default behavior if needed
         event.preventDefault();
 
-        // Call the function to select all radios
-        selectAllRadios("5"); // Replace "option1" with the desired value
+        // Fill out questions randomly
+        if (event.code === "KeyS") {
+            
+
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                let group = document.querySelectorAll(`input[name="${radio.name}"]`);
+                let randomChoice = group[Math.floor(Math.random() * group.length)];
+                randomChoice.checked = true;
+                randomChoice.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+                if (Math.random() < 0.5) { // 50% chance to check the input
+                    input.checked = true;
+                    input.dispatchEvent(new Event('change', { bubbles: true })); // Trigger event if needed
+                } else {
+                    input.checked = false;
+                }
+            });
+        }
+        
+        // Fill out specific code
+        if (['1','2','3','4','5','6'].includes(event.key)) {
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                if (checkbox.value === Number(event.key)) {
+                    checkbox.checked = true;
+                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
     }
 });
