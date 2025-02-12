@@ -146,22 +146,22 @@ function showResults(responseData) {
 }
 
 //// Builds the  profile info
-function createProfileColumn(title, info) {
-    const sectionDiv = document.createElement('div');
+// function createProfileColumn(title, info) {
+//     const sectionDiv = document.createElement('div');
 
-    createAndAppendElement(sectionDiv,'h3',title,"profileIntro")
-    createAndAppendElement(sectionDiv,'h1',info.profile,"profileName")
-    createAndAppendElement(sectionDiv,'p',"Profile explanation:",'paragraphHeader')
+//     createAndAppendElement(sectionDiv,'h3',title,"profileIntro")
+//     createAndAppendElement(sectionDiv,'h1',info.profile,"profileName")
+//     createAndAppendElement(sectionDiv,'p',"Profile explanation:",'paragraphHeader')
 
-    if (info.text == null) {
-        var profileDescription = "Could not find profile"
-    } else {
-        var profileDescription = info.text.description
-    }
-    createAndAppendElement(sectionDiv,'p',profileDescription)
+//     if (info.text == null) {
+//         var profileDescription = "Could not find profile"
+//     } else {
+//         var profileDescription = info.text.description
+//     }
+//     createAndAppendElement(sectionDiv,'p',profileDescription)
 
-    return sectionDiv;
-}
+//     return sectionDiv;
+// }
 
 /// Makes the bar chart with results
 function createBarChart(wrapperElement,scoreTracker) {
@@ -223,7 +223,11 @@ function createECBlock(name, info, scoreTracker) {
     const ecDiv = document.createElement('div');
     
     createAndAppendElement(ecDiv,'h2',name,"ecName")
-    showECLevel(info.level,ecDiv)
+    
+    // Calculate a score out of 5, also show the exact score 0-1
+    createAndAppendElement(ecDiv, 'p',`Level: ${Math.min(Math.floor(info.score * 5) + 1, 5)} out of 5`,'ecLevel')
+    createAndAppendElement(ecDiv, 'p',`Exact score: ${info.score.toFixed(2)}`,'ecLevel')
+    // showECLevel(info.level,ecDiv)
 
     // If the EC could not be found (no text attached), return the error message and stop
     if (info.text == null) {
@@ -243,21 +247,21 @@ function createECBlock(name, info, scoreTracker) {
     return ecDiv
 }
 
-function showECLevel(level,parent) {
-    if (level == null) {
-        createAndAppendElement(parent,'p', `Level: "N/A"}`,"ecLevel")
-    } else {
-        let levelIntro = document.createTextNode("Level: ")
-        let coloredScoreText = document.createElement('span')
-        coloredScoreText.textContent = level
-        coloredScoreText.className = `score${level}`
-        let showScore = document.createElement('p')
-        showScore.appendChild(levelIntro)
-        showScore.appendChild(coloredScoreText)
-        showScore.className = "ecLevel"
-        parent.appendChild(showScore)
-    }
-}
+// function showECLevel(level,parent) {
+//     if (level == null) {
+//         createAndAppendElement(parent,'p', `Level: "N/A"`,"ecLevel")
+//     } else {
+//         let levelIntro = document.createTextNode("Level: ")
+//         let coloredScoreText = document.createElement('span')
+//         coloredScoreText.textContent = level
+//         coloredScoreText.className = `score${level}`
+//         let showScore = document.createElement('p')
+//         showScore.appendChild(levelIntro)
+//         showScore.appendChild(coloredScoreText)
+//         showScore.className = "ecLevel"
+//         parent.appendChild(showScore)
+//     }
+// }
 
 // Helper function to create a block of text
 function createAndAppendElement(parent, tag, textContent, className = '') {
