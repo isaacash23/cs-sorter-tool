@@ -170,9 +170,9 @@ function createBarChart(wrapperElement,scoreTracker) {
     chartCanvas = document.createElement('canvas')
     wrapperElement.appendChild(chartCanvas)
     
-    ecLabels = scoreTracker.map(row => row[0])
-    ecScores = scoreTracker.map(row => row[1])
-    ecDivElements = scoreTracker.map(row => row[2])
+    const ecLabels = scoreTracker.map(row => row[0])
+    const ecScores = scoreTracker.map(row => row[1])
+    const ecDivElements = scoreTracker.map(row => row[2])
 
     const chart = new Chart(chartCanvas, {
         type: 'bar',
@@ -192,7 +192,7 @@ function createBarChart(wrapperElement,scoreTracker) {
                 if (elements.length > 0) {
                     const index = elements[0].index;
                     ecDivElements[index]?.scrollIntoView({ behavior: 'smooth' });
-                }
+                } 
             }
         }
     });
@@ -237,10 +237,12 @@ function createECBlock(name, info, scoreTracker) {
         return ecDiv
     }
 
-    createAndAppendElement(ecDiv, 'p', 'Description:', 'paragraphHeader');
-    createAndAppendElement(ecDiv, 'p', info.text.description, 'ecExplanation');
-    createAndAppendElement(ecDiv, 'p', 'What this means:', 'paragraphHeader');
-    createAndAppendElement(ecDiv, 'p', info.text.supports, 'ecExplanation');
+    createAndAppendElement(ecDiv, 'p', 'Overall description:', 'paragraphHeader');
+    createAndAppendElement(ecDiv, 'p', info.text.overall, 'ecExplanation');
+    createAndAppendElement(ecDiv, 'p', 'What a high score means:', 'paragraphHeader');
+    createAndAppendElement(ecDiv, 'p', info.text.high, 'ecExplanation');
+    createAndAppendElement(ecDiv, 'p', 'What a low score means:', 'paragraphHeader');
+    createAndAppendElement(ecDiv, 'p', info.text.low, 'ecExplanation');
     
     ecDiv.className = "ecBlock"
     scoreTracker.push([name,info.score,ecDiv])
