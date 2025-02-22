@@ -103,6 +103,17 @@ button:hover {
     color: red;
 }
 
+/* Text blocks*/
+ul {
+    padding-left: 20px;  /* Adjust the indent */
+    margin: 10px 0;      /* Space above and below the list */
+  }
+  
+  li {
+    list-style-position: inside; /* Align bullets with text block */
+  }
+  
+
 
 /* Smooth Transitions */
 /* * {

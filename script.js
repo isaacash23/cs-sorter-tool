@@ -271,8 +271,25 @@ function createAndAppendElement(parent, tag, textContent, className = '') {
     if (className) {
         element.className = className;
     }
-    element.textContent = textContent;
+
+    element.innerHTML = processTextBlockToHTML(textContent)
+    console.log(element.innerHTML)        
+
     parent.appendChild(element);
+}
+
+// Get the line breaks and bullets to show up correctly with HTML
+function processTextBlockToHTML(text) {
+    return text
+        .split('\n') // Split up each line
+        .map(line => {
+        const trimmed = line.trimStart(); // Strip leading space
+        return trimmed.startsWith('-') // Check if it starts with a hyphen, turn into bullet point if so
+            ? `<li>${trimmed.slice(1).trim()}</li>` 
+            : trimmed.replace(/\n/g, '<br>');
+        })
+        .join('')
+        .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
 }
 
 ////// User Interaction ////////
@@ -341,6 +358,16 @@ document.addEventListener("keydown", (event) => {
                     input.checked = false;
                 }
             });
+
+            if (event.ctrlKey && event.metaKey) {
+                // // Hide the survey and submit button
+                document.getElementById("survey").classList.add("hidden");
+                document.getElementById("submit").classList.add("hidden");
+                document.getElementById("results").classList.remove("hidden");
+                document.getElementById("back").classList.remove("hidden");
+
+                submitAnswers()
+            }
         }
         
         // Fill out specific code
