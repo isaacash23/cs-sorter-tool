@@ -1,5 +1,6 @@
 const SORTER_API_URL = "https://script.google.com/macros/s/AKfycbyWfDz3H40k9YrDG3sXsjtXWX8-l1i5gp51CnFXDinKPLEzJqKo34NDDuRQvxIcaFbbwQ/exec"
 const TEST_API_URL = "https://script.google.com/macros/s/AKfycbwBBpviDWh21a2tBaf1rgV0akY7E94VFGm9dPa4pnuD5ToHQp5Pn8Pa4vcT2_1M-k-7/exec"
+const DATABASE_API_URL = "https://script.google.com/macros/s/AKfycbw7g4dE5FknPjGMCg1kCy1CeaRfI5xFlf97QzAw5PFN0yQqywqoaOiyuUjOKFJ5HvvPcw/exec"
 
 const textErrorMessage = "Insufficient information to determine EC level"
 
@@ -78,11 +79,26 @@ function getSelectedAnswers() {
     return selectedAnswers;
 }
 
+function getMetadata() {
+    // Get time in Eastern
+    let submission_time = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }).format(new Date());
+    return {"Submission Time": submission_time}
+}
+
 // Send the answers through a POST call
 
 async function submitAnswers() {
-    selectedAnswers = getSelectedAnswers()
-    postArguments = {'selected_answers': selectedAnswers}
+    const selectedAnswers = getSelectedAnswers()
+    const postArguments = {'selected_answers': selectedAnswers}
 
     const response = await fetch(SORTER_API_URL, {
         // redirect: "follow",
@@ -95,6 +111,23 @@ async function submitAnswers() {
 
     const responseData = await response.json(); // Parse the JSON response
     showResults(responseData)
+
+    const metadata = getMetadata()
+
+    writeToDatabase(selectedAnswers, responseData, metadata)
+}
+
+// Take the response and add it as a row to the database
+async function writeToDatabase(answers, results, metadata) {
+    full_response = {"results": results, "answers": answers, "metadata": metadata}
+    const database_response = await fetch(DATABASE_API_URL, {
+        // redirect: "follow",
+        method: "POST",
+        body: JSON.stringify(full_response),
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+      });
 }
 
 /// Display the results
@@ -272,8 +305,7 @@ function createAndAppendElement(parent, tag, textContent, className = '') {
         element.className = className;
     }
 
-    element.innerHTML = processTextBlockToHTML(textContent)
-    console.log(element.innerHTML)        
+    element.innerHTML = processTextBlockToHTML(textContent)  
 
     parent.appendChild(element);
 }
