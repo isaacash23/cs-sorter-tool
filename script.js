@@ -137,6 +137,8 @@ function showResults(responseData) {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = ''; // Clear previous content
 
+    makeSaveResultsButton(resultsDiv)
+
     // Create a container for each row
     const createRow = () => {
         const row = document.createElement('div');
@@ -176,6 +178,41 @@ function showResults(responseData) {
     // Fill in charts with EC scores
     createBarChart(govChart,govECNamesAndScores)
     createBarChart(communityChart,communityECNamesAndScores)
+}
+
+// Button to save the results
+function makeSaveResultsButton(div) {
+    const button = document.createElement("button");
+    button.textContent = "Save my results";
+    button.style.marginTop = "20px";
+    button.addEventListener("click", downloadPDF);
+    button.className = "results button"
+
+    // Append the button to the body (or another container)
+    div.appendChild(button);
+}
+
+// Use the html2pdf library to download a pdf of the page
+function downloadPDF() {
+    const elements = document.body
+
+    const screenWidth = window.innerWidth
+    const screenHeight = document.body.scrollHeight
+
+    let orientation;
+    if (screenHeight > screenWidth) {
+        orientation = 'portrait'
+    } else {
+        orientation = 'landscape'
+    }
+
+    const options = {
+        filename:     'CommunityResults.pdf',
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'px', format: [screenWidth, screenHeight], orientation: orientation, hotfixes: ["px_scaling"]}
+    };
+
+    html2pdf().set(options).from(elements).save();
 }
 
 //// Builds the  profile info
@@ -218,6 +255,11 @@ function createBarChart(wrapperElement,scoreTracker) {
         },
         options: {
             indexAxis: 'y', // Horizontal bars
+            scales: {
+                x: {
+                    suggestedMax: 1 // Ensure the x-axis always goes up to 1
+                }
+            },
             plugins: {
                 legend: { display: false } // Hide legend
             },
@@ -230,15 +272,17 @@ function createBarChart(wrapperElement,scoreTracker) {
         }
     });
 
-    function getBarColor(score) {
-        // Base color in HSL format (blue: 210° hue)
-        const minLightness = 80; // Lightest color
-        const maxLightness = 30; // Darkest color
-
-        // Map score to lightness value (inverted: higher score = darker)
-        const lightness = minLightness - score * (minLightness - maxLightness);
-
-        return `hsl(210, 100%, ${lightness}%)`; // HSL format keeps saturation constant
+    function getBarColor(score, startColor, endColor) {
+        // Define start and end colors in HSL
+        const [h1, s1, l1] = [171, 90, 75];
+        const [h2, s2, l2] = [259, 64, 26];
+    
+        // Interpolate each component
+        const h = h1 + score * (h2 - h1);
+        const s = s1 + score * (s2 - s1);
+        const l = l1 + score * (l2 - l1);
+    
+        return `hsl(${h}, ${s}%, ${l}%)`;
     }
 }
 
@@ -257,10 +301,14 @@ function createECBlock(name, info, scoreTracker) {
     
     createAndAppendElement(ecDiv,'h2',name,"ecName")
     
-    // Calculate a score out of 5, also show the exact score 0-1
-    createAndAppendElement(ecDiv, 'p',`Level: ${Math.min(Math.floor(info.score * 5) + 1, 5)} out of 5`,'ecLevel')
-    createAndAppendElement(ecDiv, 'p',`Exact score: ${info.score.toFixed(2)}`,'ecLevel')
-    // showECLevel(info.level,ecDiv)
+    if (info.score != null) {
+        // Calculate a score out of 5, also show the exact score 0-1
+        createAndAppendElement(ecDiv, 'p',`Level: ${Math.min(Math.floor(info.score * 5) + 1, 5)} out of 5`,'ecLevel')
+        createAndAppendElement(ecDiv, 'p',`Exact score: ${info.score.toFixed(2)}`,'ecLevel')
+        // showECLevel(info.level,ecDiv) [Depracated]
+    } else {
+        createAndAppendElement(ecDiv, 'p',`Score could not be calculated (not enough questions answered)`,'ecLevel')
+    }
 
     // If the EC could not be found (no text attached), return the error message and stop
     if (info.text == null) {
