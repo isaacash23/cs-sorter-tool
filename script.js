@@ -96,7 +96,7 @@ function getMetadata() {
 
 // Send the answers through a POST call
 
-async function submitAnswers() {
+async function submitAnswers(recordResponse=true) {
     const selectedAnswers = getSelectedAnswers()
     const postArguments = {'selected_answers': selectedAnswers}
 
@@ -114,12 +114,15 @@ async function submitAnswers() {
 
     const metadata = getMetadata()
 
-    writeToDatabase(selectedAnswers, responseData, metadata)
+    if (recordResponse) {
+        writeToDatabase(selectedAnswers, responseData, metadata)
+    }
 }
 
 // Take the response and add it as a row to the database
 async function writeToDatabase(answers, results, metadata) {
     full_response = {"results": results, "answers": answers, "metadata": metadata}
+    console.log(full_response)
     const database_response = await fetch(DATABASE_API_URL, {
         // redirect: "follow",
         method: "POST",
@@ -330,22 +333,6 @@ function createECBlock(name, info, scoreTracker) {
     return ecDiv
 }
 
-// function showECLevel(level,parent) {
-//     if (level == null) {
-//         createAndAppendElement(parent,'p', `Level: "N/A"`,"ecLevel")
-//     } else {
-//         let levelIntro = document.createTextNode("Level: ")
-//         let coloredScoreText = document.createElement('span')
-//         coloredScoreText.textContent = level
-//         coloredScoreText.className = `score${level}`
-//         let showScore = document.createElement('p')
-//         showScore.appendChild(levelIntro)
-//         showScore.appendChild(coloredScoreText)
-//         showScore.className = "ecLevel"
-//         parent.appendChild(showScore)
-//     }
-// }
-
 // Helper function to create a block of text
 function createAndAppendElement(parent, tag, textContent, className = '') {
     const element = document.createElement(tag);
@@ -414,6 +401,7 @@ function selectAllRadios(value) {
 }
 
 document.addEventListener("keydown", (event) => {
+    // console.log(event)
     
     if (event.shiftKey && (event.ctrlKey || event.metaKey || event.altKey)) {
         // Prevent default behavior if needed
@@ -446,19 +434,37 @@ document.addEventListener("keydown", (event) => {
                 document.getElementById("results").classList.remove("hidden");
                 document.getElementById("back").classList.remove("hidden");
 
-                submitAnswers()
+                submitAnswers(recordResponse = false)
             }
         }
-        
-        // Fill out specific code
-        if (['1','2','3','4','5','6'].includes(event.key)) {
-            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                if (checkbox.value === Number(event.key)) {
-                    checkbox.checked = true;
-                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        }
+    }
 
+    if (event.code === "Enter" && (event.ctrlKey || event.metaKey || event.altKey)) {
+        // // Hide the survey and submit button
+        document.getElementById("survey").classList.add("hidden");
+        document.getElementById("submit").classList.add("hidden");
+        document.getElementById("results").classList.remove("hidden");
+        document.getElementById("back").classList.remove("hidden");
+
+        submitAnswers(recordResponse = false)
     }
 });
+
+
+// Deprecated code blocks
+
+// function showECLevel(level,parent) {
+//     if (level == null) {
+//         createAndAppendElement(parent,'p', `Level: "N/A"`,"ecLevel")
+//     } else {
+//         let levelIntro = document.createTextNode("Level: ")
+//         let coloredScoreText = document.createElement('span')
+//         coloredScoreText.textContent = level
+//         coloredScoreText.className = `score${level}`
+//         let showScore = document.createElement('p')
+//         showScore.appendChild(levelIntro)
+//         showScore.appendChild(coloredScoreText)
+//         showScore.className = "ecLevel"
+//         parent.appendChild(showScore)
+//     }
+// }
