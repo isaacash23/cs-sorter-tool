@@ -22,10 +22,15 @@ async function fetchQuestionData() {
     }
 }
 
-//Show the questions on the page
+// Show the questions on the page
 async function fillInQuestions() {
     let questions = await fetchQuestionData()
-    // Keet track of which Q IDs have already been created
+    
+    // Create an array to hold all the question pages, to go back and forth between sections
+    let maxPage = Math.max(...questions.map(q => q.page))
+    const questionPageDivs = Array.from({ length: maxPage }, () => document.createElement("div"))
+
+    // Add questions to the right page divs, Keep track of which Q IDs have already been created
     var seenQuestionIDs = new Set()
     for (const q of questions) {
         if (seenQuestionIDs.has(q.id)) {
@@ -49,10 +54,76 @@ async function fillInQuestions() {
             `;
             questionDiv.appendChild(label);
         });
-    
-        surveyDiv.appendChild(questionDiv);
+
+        // Add question element to the right page
+        questionPageDivs[q.page-1].appendChild(questionDiv)
     }
+
+    addQuestionPageButtons(questionPageDivs)
+    surveyDiv.append(...questionPageDivs)
 }
+
+// Add in back and next buttons to each page
+function addQuestionPageButtons(questionPageDivs) {
+    
+    for (let i = 0; i < questionPageDivs.length; i++) {
+        let p = questionPageDivs[i]       
+
+        if (i > 0) {
+            p.classList.add("hidden")
+            p.appendChild(createBackButton(i,questionPageDivs))
+        }
+
+        if (i+1 < questionPageDivs.length) {
+            p.appendChild(createNextButton(i,questionPageDivs))
+        } else {
+            p.appendChild(createSubmitButton(questionPageDivs))
+        }
+    }
+
+    // Also add a back button for the results page, to return to the questions
+    document.getElementById("results").appendChild(createBackButton(null,questionPageDivs,resultsPage=true))
+}
+
+// Create buttons for each page for interaction
+function createNextButton(pageIndex,questionPageDivs) {
+    const nextButton = document.createElement("button");
+    nextButton.textContent = "Next";
+    nextButton.style.marginTop = "20px";
+    // Hide the current page & show the next page on click
+    nextButton.addEventListener("click", () => {
+        questionPageDivs[pageIndex].classList.add("hidden")
+        questionPageDivs[pageIndex+1].classList.remove("hidden")
+    })
+    nextButton.className = "next-button"
+    return nextButton
+}
+
+function createBackButton(pageIndex,questionPageDivs) {
+    const backButton = document.createElement("button");
+    backButton.textContent = "Back";
+    backButton.style.marginRight = "10px";
+    // Hide the current page & show the previous page on click
+    backButton.addEventListener("click", () => {
+        questionPageDivs[pageIndex].classList.add("hidden")
+        questionPageDivs[pageIndex-1].classList.remove("hidden")
+    })
+    backButton.className = "back-button"
+    return backButton
+}
+
+function createSubmitButton(questionPageDivs) {
+    const submitButton = document.createElement("button");
+    submitButton.textContent = "Submit";
+    submitButton.addEventListener("click", () => {
+        document.getElementById("survey").classList.add("hidden")
+        document.getElementById("results").classList.remove("hidden")
+        submitAnswers()
+    })
+    submitButton.className = "submit-button"
+    return submitButton
+}
+
 
 // Load survey
 const surveyDiv = document.getElementById("survey");
@@ -122,7 +193,6 @@ async function submitAnswers(recordResponse=true) {
 // Take the response and add it as a row to the database
 async function writeToDatabase(answers, results, metadata) {
     full_response = {"results": results, "answers": answers, "metadata": metadata}
-    console.log(full_response)
     const database_response = await fetch(DATABASE_API_URL, {
         // redirect: "follow",
         method: "POST",
@@ -150,12 +220,6 @@ function showResults(responseData) {
         return row;
     };
 
-    // Add Local Government and Community profiles
-    // const profileRow = createRow();
-    // profileRow.appendChild(createProfileColumn('Local Government Profile:', responseData.local_gov_profile));
-    // profileRow.appendChild(createProfileColumn('Community Profile:', responseData.community_profile));
-    // resultsDiv.appendChild(profileRow);
-
     // Add header row for ECs
     const ecHeaderRow = createRow();
     createAndAppendElement(ecHeaderRow,'h3',"Local Government Enabling Conditions:","ecColumnHeader")
@@ -181,6 +245,8 @@ function showResults(responseData) {
     // Fill in charts with EC scores
     createBarChart(govChart,govECNamesAndScores)
     createBarChart(communityChart,communityECNamesAndScores)
+
+    addResultsBackButton()
 }
 
 // Button to save the results
@@ -189,7 +255,7 @@ function makeSaveResultsButton(div) {
     button.textContent = "Save my results";
     button.style.marginTop = "20px";
     button.addEventListener("click", downloadPDF);
-    button.className = "results button"
+    button.className = "results-button"
 
     // Append the button to the body (or another container)
     div.appendChild(button);
@@ -217,24 +283,6 @@ function downloadPDF() {
 
     html2pdf().set(options).from(elements).save();
 }
-
-//// Builds the  profile info
-// function createProfileColumn(title, info) {
-//     const sectionDiv = document.createElement('div');
-
-//     createAndAppendElement(sectionDiv,'h3',title,"profileIntro")
-//     createAndAppendElement(sectionDiv,'h1',info.profile,"profileName")
-//     createAndAppendElement(sectionDiv,'p',"Profile explanation:",'paragraphHeader')
-
-//     if (info.text == null) {
-//         var profileDescription = "Could not find profile"
-//     } else {
-//         var profileDescription = info.text.description
-//     }
-//     createAndAppendElement(sectionDiv,'p',profileDescription)
-
-//     return sectionDiv;
-// }
 
 /// Makes the bar chart with results
 function createBarChart(wrapperElement,scoreTracker) {
@@ -277,7 +325,7 @@ function createBarChart(wrapperElement,scoreTracker) {
 
     function getBarColor(score, startColor, endColor) {
         // Define start and end colors in HSL
-        const [h1, s1, l1] = [171, 90, 75];
+        const [h1, s1, l1] = [110, 60, 75];
         const [h2, s2, l2] = [259, 64, 26];
     
         // Interpolate each component
@@ -307,7 +355,7 @@ function createECBlock(name, info, scoreTracker) {
     if (info.score != null) {
         // Calculate a score out of 5, also show the exact score 0-1
         createAndAppendElement(ecDiv, 'p',`Level: ${Math.min(Math.floor(info.score * 5) + 1, 5)} out of 5`,'ecLevel')
-        createAndAppendElement(ecDiv, 'p',`Exact score: ${info.score.toFixed(2)}`,'ecLevel')
+        // createAndAppendElement(ecDiv, 'p',`Exact score: ${info.score.toFixed(2)}`,'ecLevel')
         // showECLevel(info.level,ecDiv) [Depracated]
     } else {
         createAndAppendElement(ecDiv, 'p',`Score could not be calculated (not enough questions answered)`,'ecLevel')
@@ -359,29 +407,19 @@ function processTextBlockToHTML(text) {
         .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
 }
 
-////// User Interaction ////////
-
-
-// Handle submit
-document.getElementById("submit").addEventListener("click", () => {
-
-    // // Hide the survey and submit button
-    document.getElementById("survey").classList.add("hidden");
-    document.getElementById("submit").classList.add("hidden");
-    document.getElementById("results").classList.remove("hidden");
-    document.getElementById("back").classList.remove("hidden");
-
-    submitAnswers()
-    
-});
-
-document.getElementById("back").addEventListener("click", () => {
-    document.getElementById("results").classList.add("hidden");
-    document.getElementById("back").classList.add("hidden");
-    document.getElementById("survey").classList.remove("hidden");
-    document.getElementById("submit").classList.remove("hidden");
-
-});
+// Make a back button that takes the user back to the survey
+function addResultsBackButton () {
+    const backButton = document.createElement("button");
+    backButton.textContent = "Back";
+    backButton.style.marginTop = "20px";
+    backButton.addEventListener("click", () => {
+        document.getElementById("survey").classList.remove("hidden")
+        document.getElementById("results").classList.add("hidden")
+        submitAnswers()
+    })
+    backButton.className = "submit-button"
+    document.getElementById("results").appendChild(backButton)
+}
 
 
 //////// Testing /////////
@@ -430,9 +468,7 @@ document.addEventListener("keydown", (event) => {
             if (event.ctrlKey && event.metaKey) {
                 // // Hide the survey and submit button
                 document.getElementById("survey").classList.add("hidden");
-                document.getElementById("submit").classList.add("hidden");
                 document.getElementById("results").classList.remove("hidden");
-                document.getElementById("back").classList.remove("hidden");
 
                 submitAnswers(recordResponse = false)
             }
@@ -442,9 +478,7 @@ document.addEventListener("keydown", (event) => {
     if (event.code === "Enter" && (event.ctrlKey || event.metaKey || event.altKey)) {
         // // Hide the survey and submit button
         document.getElementById("survey").classList.add("hidden");
-        document.getElementById("submit").classList.add("hidden");
         document.getElementById("results").classList.remove("hidden");
-        document.getElementById("back").classList.remove("hidden");
 
         submitAnswers(recordResponse = false)
     }
@@ -452,6 +486,12 @@ document.addEventListener("keydown", (event) => {
 
 
 // Deprecated code blocks
+
+    // Add Local Government and Community profiles [in showResults]
+    // const profileRow = createRow();
+    // profileRow.appendChild(createProfileColumn('Local Government Profile:', responseData.local_gov_profile));
+    // profileRow.appendChild(createProfileColumn('Community Profile:', responseData.community_profile));
+    // resultsDiv.appendChild(profileRow);
 
 // function showECLevel(level,parent) {
 //     if (level == null) {
@@ -467,4 +507,22 @@ document.addEventListener("keydown", (event) => {
 //         showScore.className = "ecLevel"
 //         parent.appendChild(showScore)
 //     }
+// }
+
+//// Builds the  profile info
+// function createProfileColumn(title, info) {
+//     const sectionDiv = document.createElement('div');
+
+//     createAndAppendElement(sectionDiv,'h3',title,"profileIntro")
+//     createAndAppendElement(sectionDiv,'h1',info.profile,"profileName")
+//     createAndAppendElement(sectionDiv,'p',"Profile explanation:",'paragraphHeader')
+
+//     if (info.text == null) {
+//         var profileDescription = "Could not find profile"
+//     } else {
+//         var profileDescription = info.text.description
+//     }
+//     createAndAppendElement(sectionDiv,'p',profileDescription)
+
+//     return sectionDiv;
 // }
