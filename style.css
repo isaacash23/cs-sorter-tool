@@ -63,6 +63,11 @@ button:hover {
     margin: 5px 0; /* Adds spacing between options */
 }
 
+.section-header {
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
 /* Results */
 #results div {
     padding: 10px;

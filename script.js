@@ -4,6 +4,18 @@ const DATABASE_API_URL = "https://script.google.com/macros/s/AKfycbw7g4dE5FknPjG
 
 const textErrorMessage = "Insufficient information to determine EC level"
 
+const sectionHeaders = [
+    [
+        "Please indicate the extent to which you disagree or agree with the following statements about your local government",
+        "Indicate the following characteristics about your local government (select all that apply)",
+        "Please rate the effectiveness of your local government's partnerships with the following stakeholder groups when delivering on programs in your community"
+    ],
+    [
+        "Please mark the extent to which you disagree or agree with the following statements about your community and its community-based organizations (CBOs)",
+        "Please indicate the following characteristics about your community and its CBOs"
+    ]
+]
+
 //////// Build out the questions page ///////////
 
 //Fetch the questions from the spreadsheet
@@ -30,6 +42,24 @@ async function fillInQuestions() {
     let maxPage = Math.max(...questions.map(q => q.page))
     const questionPageDivs = Array.from({ length: maxPage }, () => document.createElement("div"))
 
+    // Create div sections in each page
+    var sectionDivs = []
+    for (let i = 0; i < questionPageDivs.length; i++) {
+        // Find the total number of sections in the page (based off the max number the user has entered)
+        let maxSectionsInPage = Math.max(...questions.filter(q => q.page==(i+1)).map(q => q.page_section))
+
+        // Create new divs for the sections and add them to the overall question page div
+        sectionDivs[i] = Array.from({ length: maxSectionsInPage }, () => document.createElement("div"))
+        questionPageDivs[i].append(...sectionDivs[i])
+    }
+
+    // Fill in section headers
+    for (let i = 0; i < sectionHeaders.length; i++) {
+        for (let j = 0; j < sectionHeaders[i].length; j++) {
+            createAndAppendElement(sectionDivs[i][j],'p',sectionHeaders[i][j],"section-header")
+        }
+    }
+
     // Add questions to the right page divs, Keep track of which Q IDs have already been created
     var seenQuestionIDs = new Set()
     for (const q of questions) {
@@ -55,8 +85,8 @@ async function fillInQuestions() {
             questionDiv.appendChild(label);
         });
 
-        // Add question element to the right page
-        questionPageDivs[q.page-1].appendChild(questionDiv)
+        // Add question element to the right page & section
+        sectionDivs[q.page-1][q.page_section-1].appendChild(questionDiv)
     }
 
     addQuestionPageButtons(questionPageDivs)
