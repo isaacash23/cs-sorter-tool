@@ -7,7 +7,7 @@ const textErrorMessage = "Insufficient information to determine EC level"
 const sectionHeaders = [
     [
         "Please indicate the extent to which you disagree or agree with the following statements about your local government",
-        "Indicate the following characteristics about your local government (select all that apply)",
+        "Indicate the following characteristics about your local government (Select all that apply)",
         "Please rate the effectiveness of your local government's partnerships with the following stakeholder groups when delivering on programs in your community"
     ],
     [
@@ -124,6 +124,8 @@ function createNextButton(pageIndex,questionPageDivs) {
     nextButton.addEventListener("click", () => {
         questionPageDivs[pageIndex].classList.add("hidden")
         questionPageDivs[pageIndex+1].classList.remove("hidden")
+        // Go to the top of the next page
+        window.scrollTo({ top: 0});
     })
     nextButton.className = "next-button"
     return nextButton
@@ -137,6 +139,8 @@ function createBackButton(pageIndex,questionPageDivs) {
     backButton.addEventListener("click", () => {
         questionPageDivs[pageIndex].classList.add("hidden")
         questionPageDivs[pageIndex-1].classList.remove("hidden")
+        // Go to the bottom of the previous page
+        window.scrollTo({ top: document.body.scrollHeight});
     })
     backButton.className = "back-button"
     return backButton
@@ -149,6 +153,8 @@ function createSubmitButton(questionPageDivs) {
         document.getElementById("survey").classList.add("hidden")
         document.getElementById("results").classList.remove("hidden")
         submitAnswers()
+        // Go to the top of the next page
+        window.scrollTo({ top: 0});
     })
     submitButton.className = "submit-button"
     return submitButton
@@ -180,7 +186,7 @@ function getSelectedAnswers() {
     return selectedAnswers;
 }
 
-function getMetadata() {
+async function getMetadata() {
     // Get time in Eastern
     let submission_time = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/New_York',
@@ -192,7 +198,25 @@ function getMetadata() {
         second: '2-digit',
         hour12: true
       }).format(new Date());
-    return {"Submission Time": submission_time}
+
+    try {
+        var ip_response = await fetch("http://ip-api.com/json/");
+        var ip_data = await ip_response.json()
+    } catch (error) {
+        ip_data = {}
+    }
+
+    const error_message = "N/A"
+    const metadata =  {
+        "Submission Time": submission_time, 
+        "State/Region": ip_data.region ?? error_message, 
+        "Country": ip_data.country ?? error_message, 
+        "IP Address": ip_data.query ?? error_message, 
+        "City": ip_data.city ?? error_message,
+        "ZIP Code": ip_data.zip ?? error_message
+    }
+
+    return metadata
 }
 
 // Send the answers through a POST call
@@ -213,7 +237,7 @@ async function submitAnswers(recordResponse=true) {
     const responseData = await response.json(); // Parse the JSON response
     showResults(responseData)
 
-    const metadata = getMetadata()
+    const metadata = await getMetadata()
 
     if (recordResponse) {
         writeToDatabase(selectedAnswers, responseData, metadata)
@@ -446,6 +470,8 @@ function addResultsBackButton () {
         document.getElementById("survey").classList.remove("hidden")
         document.getElementById("results").classList.add("hidden")
         submitAnswers()
+        // Go to the bottom of the previous page
+        window.scrollTo({ top: document.body.scrollHeight});
     })
     backButton.className = "submit-button"
     document.getElementById("results").appendChild(backButton)
