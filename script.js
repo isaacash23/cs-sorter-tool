@@ -257,7 +257,7 @@ async function writeToDatabase(answers, results, metadata) {
       });
 }
 
-/// Display the results
+///////// Display the results ////////////////////
 
 function showResults(responseData) {
     console.log(responseData)
@@ -301,6 +301,11 @@ function showResults(responseData) {
     createBarChart(communityChart,communityECNamesAndScores)
 
     addResultsBackButton()
+}
+
+// Takes in value between 0 and 1, returns score out of 5
+function calcScoreOutOfFive(score) {
+    return Math.min(Math.floor(score * 5) + 1, 5)
 }
 
 // Button to save the results
@@ -354,7 +359,7 @@ function createBarChart(wrapperElement,scoreTracker) {
         data: {
             labels: ecLabels,
             datasets: [{
-                data: ecScores,
+                data: ecScores.map(x => calcScoreOutOfFive(x)),
                 backgroundColor: ecScores.map(score => getBarColor(score))
             }]
         },
@@ -362,11 +367,19 @@ function createBarChart(wrapperElement,scoreTracker) {
             indexAxis: 'y', // Horizontal bars
             scales: {
                 x: {
-                    suggestedMax: 1 // Ensure the x-axis always goes up to 1
+                    suggestedMax: 5 // Ensure the x-axis always goes up to 5
                 }
             },
             plugins: {
-                legend: { display: false } // Hide legend
+                legend: { display: false }, // Hide legend
+                tooltip: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            const value = tooltipItem.raw;
+                            return `Level: ${value} out of 5`; // Example: Converts score to percentage
+                        }
+                    }
+                }
             },
             onClick: (event, elements) => {
                 if (elements.length > 0) {
@@ -408,8 +421,8 @@ function createECBlock(name, info, scoreTracker) {
     
     if (info.score != null) {
         // Calculate a score out of 5, also show the exact score 0-1
-        createAndAppendElement(ecDiv, 'p',`Level: ${Math.min(Math.floor(info.score * 5) + 1, 5)} out of 5`,'ecLevel')
-        // createAndAppendElement(ecDiv, 'p',`Exact score: ${info.score.toFixed(2)}`,'ecLevel')
+        createAndAppendElement(ecDiv, 'p',`Level: ${calcScoreOutOfFive(info.score)} out of 5`,'ecLevel')
+        // createAndAppendElement(ecDiv, 'p',`Exact score: ${info.score.toFixed(2)}`,'ecLevel') [Deprecated]
         // showECLevel(info.level,ecDiv) [Depracated]
     } else {
         createAndAppendElement(ecDiv, 'p',`Score could not be calculated (not enough questions answered)`,'ecLevel')
