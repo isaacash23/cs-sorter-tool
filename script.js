@@ -360,14 +360,17 @@ function createBarChart(wrapperElement,scoreTracker) {
             labels: ecLabels,
             datasets: [{
                 data: ecScores.map(x => calcScoreOutOfFive(x)),
-                backgroundColor: ecScores.map(score => getBarColor(score))
+                backgroundColor: ecScores.map(x => calcScoreOutOfFive(x)).map(score => getBarColor(score,5))
             }]
         },
         options: {
             indexAxis: 'y', // Horizontal bars
             scales: {
                 x: {
-                    suggestedMax: 5 // Ensure the x-axis always goes up to 5
+                    suggestedMax: 5, // Ensure the x-axis always goes up to 5
+                    ticks: {
+                        stepSize: 1 // Force tick marks to increment by 1
+                    },
                 }
             },
             plugins: {
@@ -390,15 +393,15 @@ function createBarChart(wrapperElement,scoreTracker) {
         }
     });
 
-    function getBarColor(score, startColor, endColor) {
+    function getBarColor(score,max) {
         // Define start and end colors in HSL
         const [h1, s1, l1] = [110, 60, 75];
         const [h2, s2, l2] = [259, 64, 26];
     
         // Interpolate each component
-        const h = h1 + score * (h2 - h1);
-        const s = s1 + score * (s2 - s1);
-        const l = l1 + score * (l2 - l1);
+        const h = h1 + score/max * (h2 - h1);
+        const s = s1 + score/max * (s2 - s1);
+        const l = l1 + score/max * (l2 - l1);
     
         return `hsl(${h}, ${s}%, ${l}%)`;
     }
