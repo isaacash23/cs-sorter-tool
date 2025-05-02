@@ -264,6 +264,8 @@ function showResults(responseData) {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = ''; // Clear previous content
 
+    showResultsContextParagraph(resultsDiv)
+
     makeSaveResultsButton(resultsDiv)
 
     // Create a container for each row
@@ -306,6 +308,17 @@ function showResults(responseData) {
 // Takes in value between 0 and 1, returns score out of 5
 function calcScoreOutOfFive(score) {
     return Math.min(Math.floor(score * 5) + 1, 5)
+}
+
+function showResultsContextParagraph(div) {
+    const paragraph = `
+    <p>
+      The following results show the level of each “enabling condition” based on your answers to the survey.
+      These results can give you a sense of the strengths and growth areas for your local government and community when trying to implement economic initiatives.
+      <i>Note that these results are based only on your responses to the survey questions, and may not reflect the full complexity of your community’s context.</i>
+    </p>
+  `;
+    div.innerHTML = paragraph;
 }
 
 // Button to save the results
