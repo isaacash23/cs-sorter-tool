@@ -5,6 +5,7 @@ const DATABASE_API_URL = "https://script.google.com/macros/s/AKfycbw7g4dE5FknPjG
 const textErrorMessage = "Insufficient information to determine EC level"
 
 const sectionHeaders = [
+    [],
     [
         "Please indicate the extent to which you disagree or agree with the following statements about your local government",
         "Indicate the following characteristics about your local government (Select all that apply)",
@@ -47,6 +48,7 @@ async function fillInQuestions() {
     for (let i = 0; i < questionPageDivs.length; i++) {
         // Find the total number of sections in the page (based off the max number the user has entered)
         let maxSectionsInPage = Math.max(...questions.filter(q => q.page==(i+1)).map(q => q.page_section))
+        console.log([i,maxSectionsInPage])
 
         // Create new divs for the sections and add them to the overall question page div
         sectionDivs[i] = Array.from({ length: maxSectionsInPage }, () => document.createElement("div"))
@@ -67,23 +69,7 @@ async function fillInQuestions() {
             continue
         }
         seenQuestionIDs.add(q.id)
-        const questionDiv = document.createElement("div");
-        questionDiv.className = "question";
-        questionDiv.innerHTML = `<p>${q.question}</p>`;
-
-        //Decide whether the selection should be single (radio) or multiple (checkbox). Default to radio
-        var type = "radio"
-        if (q.type == "Multiple Selection") {
-            var type = "checkbox"
-        }
-        
-        q.options.forEach((option) => {
-            const label = document.createElement("label");
-            label.innerHTML = `
-                <input type="${type}" name = "${q.id}" value="${option.option_code}"> ${option.option_text}
-            `;
-            questionDiv.appendChild(label);
-        });
+        questionDiv = makeQuestionDiv(q)
 
         // Add question element to the right page & section
         sectionDivs[q.page-1][q.page_section-1].appendChild(questionDiv)
@@ -91,6 +77,37 @@ async function fillInQuestions() {
 
     addQuestionPageButtons(questionPageDivs)
     surveyDiv.append(...questionPageDivs)
+}
+
+// Make a question element to add
+function makeQuestionDiv(q) {
+    const questionDiv = document.createElement("div");
+    questionDiv.className = "question";
+    questionDiv.innerHTML = `<p>${q.question}</p>`;
+
+    if (q.type === "Open Response") {
+        const input = document.createElement("textarea");
+        input.name = q.id;
+        input.rows = 2;
+        input.cols = 50;
+        questionDiv.appendChild(input);
+    } else {
+        // Default to radio unless it's multiple selection
+        let type = "radio";
+        if (q.type === "Multiple Selection") {
+            type = "checkbox";
+        }
+
+        q.options.forEach((option) => {
+            const label = document.createElement("label");
+            label.innerHTML = `
+                <input type="${type}" name="${q.id}" value="${option.option_code}"> ${option.option_text}
+            `;
+            questionDiv.appendChild(label);
+        });
+    }
+
+    return questionDiv;
 }
 
 // Add in back and next buttons to each page
@@ -174,13 +191,22 @@ function getSelectedAnswers() {
     const questions = document.querySelectorAll('.question');
 
     questions.forEach((questionDiv) => {
-        const questionId = questionDiv.querySelector('input[type="radio"], input[type="checkbox"]').name; // Get the name attribute
-        const selectedInputs = questionDiv.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked'); // Get selected inputs (radio or checkbox)
-        
-        const selectedOptions = Array.from(selectedInputs).map(input => input.value); // Collect codes of selected inputs
-        
-        // Save the selected options or null if none selected
-        selectedAnswers[questionId] = selectedOptions.length > 0 ? selectedOptions : null;
+        // First check if it's a radio/checkbox question
+        const input = questionDiv.querySelector('input[type="radio"], input[type="checkbox"]');
+        if (input) {
+            const questionId = input.name; // Get the name attribute
+            const selectedInputs = questionDiv.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked'); // Get selected inputs (radio or checkbox)
+            const selectedOptions = Array.from(selectedInputs).map(input => input.value); // Collect codes of selected inputs
+            
+            // Save the selected options or null if none selected
+            selectedAnswers[questionId] = selectedOptions.length > 0 ? selectedOptions : null;
+        } else {
+            // Handle open response (textarea)
+            const textarea = questionDiv.querySelector('textarea');
+            if (textarea) {
+                selectedAnswers[textarea.name] = [textarea.value.trim()] || null;
+            }
+        }
     });    
 
     return selectedAnswers;
@@ -247,6 +273,7 @@ async function submitAnswers(recordResponse=true) {
 // Take the response and add it as a row to the database
 async function writeToDatabase(answers, results, metadata) {
     full_response = {"results": results, "answers": answers, "metadata": metadata}
+    console.log(full_response)
     const database_response = await fetch(DATABASE_API_URL, {
         // redirect: "follow",
         method: "POST",
