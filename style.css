@@ -19,6 +19,12 @@ body {
     margin-left: 2%;
 }
 
+.loading {
+    font-style: italic;       /* Italic text */
+    font-weight: 300;         /* Semi-bold (bolder than normal, less than bold) */
+    font-size: 1.1em;         /* Slightly larger text */
+    margin: 1em 0;
+}
 
 /* Headings */
 h1, h2, h3 {
@@ -66,6 +72,15 @@ button:hover {
 .section-header {
     margin-bottom: 10px;
     font-style: italic;
+}
+
+.open-response {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    background-color: #ffffff;
+    padding: 2px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 /* Results */

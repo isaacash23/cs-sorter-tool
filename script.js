@@ -21,6 +21,10 @@ const sectionHeaders = [
 
 //Fetch the questions from the spreadsheet
 async function fetchQuestionData() {
+    // Make the simple loading animation
+    const question_loading = document.getElementById('question-loading');
+    const interval = startLoadingAnimation();
+
     try {
         const response = await fetch(SORTER_API_URL);
         if (!response.ok) {
@@ -32,6 +36,9 @@ async function fetchQuestionData() {
     } catch (error) {
         console.error('Error fetching data:', error);
         document.getElementById('output').textContent = `Error: ${error.message}`;
+    } finally {
+        clearInterval(interval);
+        question_loading.classList.add("hidden");
     }
 }
 
@@ -48,7 +55,6 @@ async function fillInQuestions() {
     for (let i = 0; i < questionPageDivs.length; i++) {
         // Find the total number of sections in the page (based off the max number the user has entered)
         let maxSectionsInPage = Math.max(...questions.filter(q => q.page==(i+1)).map(q => q.page_section))
-        console.log([i,maxSectionsInPage])
 
         // Create new divs for the sections and add them to the overall question page div
         sectionDivs[i] = Array.from({ length: maxSectionsInPage }, () => document.createElement("div"))
@@ -90,6 +96,7 @@ function makeQuestionDiv(q) {
         input.name = q.id;
         input.rows = 2;
         input.cols = 50;
+        input.className = "open-response"
         questionDiv.appendChild(input);
     } else {
         // Default to radio unless it's multiple selection
@@ -273,7 +280,6 @@ async function submitAnswers(recordResponse=true) {
 // Take the response and add it as a row to the database
 async function writeToDatabase(answers, results, metadata) {
     full_response = {"results": results, "answers": answers, "metadata": metadata}
-    console.log(full_response)
     const database_response = await fetch(DATABASE_API_URL, {
         // redirect: "follow",
         method: "POST",
@@ -532,6 +538,19 @@ function addResultsBackButton () {
     backButton.className = "submit-button"
     document.getElementById("results").appendChild(backButton)
 }
+
+
+/////// Loading Animations ///////
+
+function startLoadingAnimation() {
+    const dots = document.getElementById('dots');
+    let count = 0;
+    return setInterval(() => {
+        count = (count + 1) % 4;
+        dots.textContent = '.'.repeat(count);
+    }, 500);
+}
+
 
 
 //////// Testing /////////
