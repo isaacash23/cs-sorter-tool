@@ -23,7 +23,7 @@ const sectionHeaders = [
 async function fetchQuestionData() {
     // Make the simple loading animation
     const question_loading = document.getElementById('question-loading');
-    const interval = startLoadingAnimation();
+    const question_dots_interval = startLoadingAnimation('question-dots');
 
     try {
         const response = await fetch(SORTER_API_URL);
@@ -37,7 +37,7 @@ async function fetchQuestionData() {
         console.error('Error fetching data:', error);
         document.getElementById('output').textContent = `Error: ${error.message}`;
     } finally {
-        clearInterval(interval);
+        clearInterval(question_dots_interval);
         question_loading.classList.add("hidden");
     }
 }
@@ -137,7 +137,7 @@ function addQuestionPageButtons(questionPageDivs) {
     }
 
     // Also add a back button for the results page, to return to the questions
-    document.getElementById("results").appendChild(createBackButton(null,questionPageDivs,resultsPage=true,id="results-back"))
+    document.getElementById("results").appendChild(createBackButton(null,questionPageDivs,resultsPage=true))
 }
 
 // Create buttons for each page for interaction
@@ -156,7 +156,7 @@ function createNextButton(pageIndex,questionPageDivs) {
     return nextButton
 }
 
-function createBackButton(pageIndex,questionPageDivs,id=null) {
+function createBackButton(pageIndex,questionPageDivs) {
     const backButton = document.createElement("button");
     backButton.textContent = "Back";
     backButton.style.marginRight = "10px";
@@ -168,9 +168,6 @@ function createBackButton(pageIndex,questionPageDivs,id=null) {
         window.scrollTo({ top: document.body.scrollHeight});
     })
     backButton.className = "back-button"
-    if (id) {
-        backButton.id = id
-    }
     return backButton
 }
 
@@ -187,17 +184,17 @@ function createSubmitButton(questionPageDivs) {
     return submitButton
 }
 
-function goToResultsPage(recordResponse=true) {
+async function goToResultsPage(recordResponse=true) {
     document.getElementById("survey").classList.add("hidden")
     document.getElementById("results").classList.remove("hidden")
     
     // Make loading animation
     createResultsLoadingElement()
-    const interval = startLoadingAnimation();
+    const results_dots_interval = startLoadingAnimation('result-dots');
 
     // Send results in
-    submitAnswers(recordResponse)
-    clearInterval(interval)
+    await submitAnswers(recordResponse)
+    clearInterval(results_dots_interval)
 
     // Go to the top of the next page
     window.scrollTo({ top: 0});
@@ -205,12 +202,13 @@ function goToResultsPage(recordResponse=true) {
 
 // Make a "loading" element before the results pop up
 function createResultsLoadingElement() {
-    // const results_loading_div = document.createElement('div');
-    // results_loading_div.id = 'result-loading';
-    // results_loading_div.className = 'loading';
-    // results_loading_div.innerHTML = 'Loading results<span id="dots"></span>';
-    // const results_back_button = document.getElementById('results-back');
-    // document.getElementById('results').insertBefore(results_loading_div,results_back_button);
+    const results_loading_div = document.createElement('div');
+    results_loading_div.id = 'result-loading';
+    results_loading_div.className = 'loading';
+    results_loading_div.innerHTML = 'Loading results<span id="result-dots"></span>';
+    const results_back_button = document.getElementById('results-back');
+    const results_div = document.getElementById('results')
+    results_div.prepend(results_loading_div);
   }
   
 
@@ -565,15 +563,16 @@ function addResultsBackButton () {
         // Go to the bottom of the previous page
         window.scrollTo({ top: document.body.scrollHeight});
     })
-    backButton.className = "submit-button"
+    backButton.className = "back-button"
     document.getElementById("results").appendChild(backButton)
 }
 
 
 /////// Loading Animations ///////
 
-function startLoadingAnimation() {
-    const dots = document.getElementById('dots');
+// Makes a 0-3 dot loading animation. Takes in the id of the span that should be animated
+function startLoadingAnimation(dotsId) {
+    const dots = document.getElementById(dotsId);
     let count = 0;
     return setInterval(() => {
         count = (count + 1) % 4;
